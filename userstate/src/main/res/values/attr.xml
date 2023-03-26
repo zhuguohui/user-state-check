@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <attr name="checkUserPolicy" format="enum">
+        <enum name="autoGo" value="0"/>
+        <enum name="justCheck" value="1"/>
+    </attr>
+</resources>

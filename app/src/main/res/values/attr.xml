@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--用户检查相关的属性，放置在类下方便查找-->
+    <!--注释使用flag的属性不能定义format-->
+    <attr name="checkUserState">
+        <flag name="login" value="1"/>
+        <flag name="bindPhone" value="2"/>
+        <flag name="bindRealName" value="4"/>
+    </attr>
+
+</resources>
