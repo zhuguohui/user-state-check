@@ -25,6 +25,31 @@ android {
     }
 }
 
+apply plugin: 'maven-publish'
+
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier 'sources'
+}
+
+def versionName = "1.0.0"
+
+afterEvaluate {
+    publishing {
+        publications {
+            Production(MavenPublication) {
+                from components.release
+                groupId = "com.zhuguohui.app"
+                artifactId = "user-state-check"
+                version = versionName
+                // 上传source，这样使用放可以看到方法注释
+                artifact generateSourcesJar
+            }
+        }
+
+    }
+}
+
 dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.4.1'
