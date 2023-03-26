@@ -1,4 +1,4 @@
-package com.zhuguohui.demo.magnagerImpl;
+package com.zhuguohui.demo.impl;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,9 +8,7 @@ import com.zhuguohui.demo.userstate.IUserStatePage;
 import com.zhuguohui.demo.userstate.IUserState;
 import com.zhuguohui.demo.userstate.manager.IUserStateManager;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -59,16 +57,7 @@ public class DemoUserStateManager implements IUserStateManager {
 
     @Override
     public IUserState[] getUserStateByFlags(int flags) {
-        DemoUserState[] values = DemoUserState.values;
-        List<DemoUserState> stateList=new ArrayList<>(0);
-        for(DemoUserState state:values){
-            boolean match =( flags & state.getAttrFlagValue()) == state.getAttrFlagValue();
-            if(match){
-                stateList.add(state);
-            }
-        }
-
-        return stateList.toArray(new IUserState[0]);
+     return DemoUserState.getUserStateByFlags(flags);
     }
 
     public void matchUserStateSuccess(IUserState userState) {

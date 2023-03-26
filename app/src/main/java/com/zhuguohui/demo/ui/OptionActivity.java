@@ -1,22 +1,19 @@
 package com.zhuguohui.demo.ui;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import com.zhuguohui.demo.R;
-import com.zhuguohui.demo.magnagerImpl.DemoUserState;
-import com.zhuguohui.demo.magnagerImpl.DemoUserStateManager;
+import com.zhuguohui.demo.impl.DemoUserState;
+import com.zhuguohui.demo.impl.DemoUserStateManager;
 import com.zhuguohui.demo.userstate.IUserState;
 import com.zhuguohui.demo.userstate.IUserStatePage;
-import com.zhuguohui.demo.userstate.manager.UserStateManager;
 
 public  class OptionActivity extends BaseActivity implements IUserStatePage {
 

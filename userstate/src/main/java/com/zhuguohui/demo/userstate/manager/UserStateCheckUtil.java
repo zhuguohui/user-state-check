@@ -1,4 +1,4 @@
-package com.zhuguohui.demo.userstate;
+package com.zhuguohui.demo.userstate.manager;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -10,13 +10,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.mdit.library.dx.stock.ProxyBuilder;
-import com.mdit.library.proxy.Enhancer;
-import com.mdit.library.proxy.MethodInterceptor;
-import com.mdit.library.proxy.MethodProxy;
+import com.zhuguohui.demo.userstate.CheckUserState;
+import com.zhuguohui.demo.userstate.IUserState;
+import com.zhuguohui.demo.userstate.UserStateCheckException;
 import com.zhuguohui.demo.userstate.function.CallBack;
-import com.zhuguohui.demo.userstate.function.Function1;
-import com.zhuguohui.demo.userstate.manager.UserStateManager;
 import com.zhuguohui.demo.userstate.policy.UserStateCheckPolicy;
+import com.zhuguohui.demo.userstate.transform.UserStateTransform;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -33,22 +32,23 @@ import io.reactivex.disposables.Disposable;
  * Time: 15:50
  * Desc:用于检查用户状态的工具类
  * 提供了两种方法
- * {@link #justCheck(Context,IUserState...)} 只检测
- * {@link #checkAndGoto(Context,IUserState...)} 检测加跳转
+ * {@link #checkAndGoto(Context, int)}检查加跳转
+ * {@link #justCheck(Context, int)}只检查，如果检查不通过直接抛出错误
+ * 错误类型为{@link UserStateCheckException}
  *
  * </pre>
  */
-public class UserStateCheckUtil {
+ class UserStateCheckUtil {
     private static final Object EMPTY_OBJ = new Object();
 
-    public static Observable<Object> justCheck(Context context,IUserState... userStates) {
+    public static Observable<Object> justCheck(Context context,int userStateFlags) {
         return Observable.just(EMPTY_OBJ)
-                .compose(new UserStateTransform<>(context,true, userStates));
+                .compose(new UserStateTransform<>(context,true, userStateFlags));
     }
 
-    public static Observable<Object> checkAndGoto(Context context,IUserState... userStates) {
+    public static Observable<Object> checkAndGoto(Context context,int userStateFlags) {
         return Observable.just(EMPTY_OBJ)
-                .compose(new UserStateTransform<>(context,false, userStates));
+                .compose(new UserStateTransform<>(context,false, userStateFlags));
     }
 
     public static <T> T getProxy(CompositeDisposable compositeDisposable, Context context, T delegate, CallBack<Throwable> errorFunction) {
@@ -57,8 +57,6 @@ public class UserStateCheckUtil {
                     .setMethodOverrideFilter(method -> method.getAnnotation(CheckUserState.class)!=null)
                     .dexCache(context.getDir("dx", Context.MODE_PRIVATE))
                     .handler(new InvocationHandler() {
-
-
 
                         private Method getMethodByName(Class clazz,String name){
                             Method[] methods = clazz.getMethods();
@@ -76,9 +74,8 @@ public class UserStateCheckUtil {
                             CheckUserState userState = method.getAnnotation(CheckUserState.class);
                             if (userState != null) {
                                 UserStateCheckPolicy policy = userState.policy();
-                                Observable<Object> observable = policy == UserStateCheckPolicy.justCheck ?
-                                        justCheck(context,UserStateManager.getInstance().getUserStateByFlags(userState.states()))
-                                        : checkAndGoto(context,UserStateManager.getInstance().getUserStateByFlags(userState.states()));
+                                Observable<Object> observable = Observable.just(EMPTY_OBJ)
+                                        .compose(new UserStateTransform<>(context,policy, userState.states()));
                                 Method finalMethod = method;
                                 Disposable disposable = observable
                                         .subscribe(obj -> {
@@ -211,7 +208,7 @@ public class UserStateCheckUtil {
             this.errorFunction=errorFunction;
             this.context=context;
             this.compositeDisposable=compositeDisposable;
-            userStates = UserStateManager.getInstance().getUserStateByFlags(userStateFlags);
+
             this.policy=policy;
         }
 
@@ -221,7 +218,7 @@ public class UserStateCheckUtil {
 
         @Override
         public void onClick(View v) {
-            Observable<Object> observable=policy==UserStateCheckPolicy.autoGo?checkAndGoto(context,userStates):justCheck(context,userStates);
+            Observable<Object> observable=policy==UserStateCheckPolicy.autoGo?checkAndGoto(context,userStateFlags):justCheck(context,userStateFlags);
             Disposable disposable = observable
                     .subscribe(obj -> {
                         clickListener.onClick(v);

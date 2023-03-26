@@ -2,15 +2,10 @@ package com.zhuguohui.demo.ui;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.PersistableBundle;
-import android.view.LayoutInflater;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.LayoutInflaterCompat;
 
-import com.zhuguohui.demo.toast.GZToast;
-import com.zhuguohui.demo.userstate.UserStateCheckUtil;
 import com.zhuguohui.demo.userstate.manager.UserStateManager;
 
 import io.reactivex.disposables.CompositeDisposable;

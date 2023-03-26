@@ -1,13 +1,14 @@
-package com.zhuguohui.demo.userstate;
+package com.zhuguohui.demo.userstate.transform;
 
 import android.content.Context;
 import android.os.Looper;
 
-
+import com.zhuguohui.demo.userstate.IUserState;
+import com.zhuguohui.demo.userstate.UserStateCallBack;
+import com.zhuguohui.demo.userstate.UserStateCheckException;
 import com.zhuguohui.demo.userstate.manager.UserStateManager;
 import com.zhuguohui.demo.userstate.policy.UserStateCheckPolicy;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -33,19 +34,20 @@ public class UserStateTransform<T> implements ObservableTransformer<T, T> {
     private List<IUserState> userStateList;
     private UserStateCheckPolicy policy;
 
-    public UserStateTransform(Context context,IUserState... userStates) {
-        this(context,false, userStates);
+    public UserStateTransform(Context context,int userStateFlags) {
+        this(context,false, userStateFlags);
     }
 
-    public UserStateTransform(Context context,boolean justCheck, IUserState... userStates) {
-        this(context,justCheck ? UserStateCheckPolicy.justCheck : UserStateCheckPolicy.autoGo, userStates);
+    public UserStateTransform(Context context,boolean justCheck, int userStateFlags) {
+        this(context,justCheck ? UserStateCheckPolicy.justCheck : UserStateCheckPolicy.autoGo, userStateFlags);
 
     }
 
-    public UserStateTransform(Context context,UserStateCheckPolicy policy, IUserState... userStates) {
-        userStateList = new ArrayList<>();
+    public UserStateTransform(Context context,UserStateCheckPolicy policy,int userStateFlags) {
+
         this.context=context;
-        userStateList.addAll(Arrays.asList(userStates));
+        IUserState[] states = UserStateManager.getInstance().getUserStateByFlags(userStateFlags);
+        userStateList=Arrays.asList(states);
         this.policy = policy == null ? UserStateCheckPolicy.autoGo : policy;
 
     }

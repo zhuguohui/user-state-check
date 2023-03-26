@@ -1,8 +1,8 @@
 package com.zhuguohui.demo.ui;
 
-import static com.zhuguohui.demo.magnagerImpl.DemoUserState.BindPhoneNumber;
-import static com.zhuguohui.demo.magnagerImpl.DemoUserState.BindRealName;
-import static com.zhuguohui.demo.magnagerImpl.DemoUserState.Login;
+import static com.zhuguohui.demo.impl.DemoUserState.BindPhoneNumber;
+import static com.zhuguohui.demo.impl.DemoUserState.BindRealName;
+import static com.zhuguohui.demo.impl.DemoUserState.Login;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,12 +10,23 @@ import android.view.View;
 
 import androidx.core.view.LayoutInflaterCompat;
 
+import com.zhuguohui.demo.api.BaiduApi;
+import com.zhuguohui.demo.api.BaiduHotListResult;
+import com.zhuguohui.demo.api.HotItemBean;
 import com.zhuguohui.demo.databinding.ActivityMainBinding;
-import com.zhuguohui.demo.magnagerImpl.DemoUserStateManager;
+import com.zhuguohui.demo.impl.DemoUserStateManager;
 import com.zhuguohui.demo.toast.GZToast;
 import com.zhuguohui.demo.userstate.CheckUserState;
-import com.zhuguohui.demo.userstate.UserStateCheckUtil;
+import com.zhuguohui.demo.userstate.manager.UserStateManager;
 import com.zhuguohui.demo.userstate.policy.UserStateCheckPolicy;
+import com.zhuguohui.demo.userstate.transform.UserStateTransform;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class MainActivity extends BaseActivity {
@@ -26,7 +37,7 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         //注入factory2
-        LayoutInflaterCompat.setFactory2(LayoutInflater.from(this), UserStateCheckUtil.getLayoutInflaterFactory(this,compositeDisposable, e->{
+        LayoutInflaterCompat.setFactory2(LayoutInflater.from(this), UserStateManager.getLayoutInflaterFactory(this,compositeDisposable, e->{
             GZToast.error().show(e.getMessage());
         }));
 
@@ -40,11 +51,13 @@ public class MainActivity extends BaseActivity {
         });
         aopActivity();
         aopView();
+        aopApi();
 
     }
 
+
     private void aopActivity() {
-        binding.setActivity(UserStateCheckUtil.getProxy(compositeDisposable,this,this,e->{
+        binding.setActivity( UserStateManager.getProxy(compositeDisposable,this,this,e->{
             GZToast.error().show(e.getMessage());
         }));
     }
@@ -56,7 +69,35 @@ public class MainActivity extends BaseActivity {
         binding.tvCollection.setOnClickListener(v -> {
             GZToast.success().show("收藏成功");
         });
+    }
 
+
+    private void aopApi() {
+        Retrofit retrofit = new Retrofit.Builder().baseUrl("https://tenapi.cn/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .build();
+        BaiduApi baiduApi = retrofit.create(BaiduApi.class);
+
+        BaiduApi finalBaiduApi = baiduApi;
+        binding.btnGetBaiduHot.setOnClickListener(v->{
+            Disposable disposable = finalBaiduApi.getHotList()
+                    .compose(new UserStateTransform<>(this, Login|BindRealName))
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .map(BaiduHotListResult::getData)
+                    .subscribe(list -> {
+                        StringBuffer buffer=new StringBuffer();
+                        for(HotItemBean itemBean:list){
+                            buffer.append(itemBean.getName()).append("\n");
+                        }
+                        binding.tvBaiduContent.setText(buffer);
+                    }, e -> {
+                        e.printStackTrace();
+                        GZToast.error().show(e.getMessage());
+                    });
+            compositeDisposable.add(disposable);
+        });
     }
 
     @CheckUserState(states = Login|BindPhoneNumber|BindRealName,policy = UserStateCheckPolicy.autoGo)
