@@ -8,7 +8,7 @@ import java.util.Objects;
  * Created by zhuguohui
  * Date: 2023/2/28
  * Time: 16:32
- * Desc:
+ * Desc:用户状态的鸡肋
  * </pre>
  */
 public  class IUserState implements Serializable {
@@ -23,11 +23,18 @@ public  class IUserState implements Serializable {
     private final String desc;
     private final int flag;
 
-
+    /**
+     * 获取xml中对应属性的int值
+     * @return
+     */
     public int getAttrFlagValue() {
         return flag;
     }
 
+    /**
+     * 获取描述便于提示
+     * @return
+     */
     public String getDesc() {
         return desc;
     }

@@ -1,17 +1,17 @@
 package com.zhuguohui.demo.impl;
 
-import android.util.Log;
-
 import com.zhuguohui.demo.userstate.IUserState;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * <pre>
  * Created by zhuguohui
  * Date: 2023/3/26
  * Time: 10:05
- * Desc:
+ * Desc:自定义的用户状态
+ * </pre>
  */
 public final class DemoUserState extends IUserState {
     private static final DemoUserState login=new DemoUserState("登录",1);
@@ -26,7 +26,6 @@ public final class DemoUserState extends IUserState {
     public static final DemoUserState[] values=new DemoUserState[]{login,bindPhoneNumber,bindRealName};
     protected DemoUserState(String desc, int attrFlagValue) {
         super(desc, attrFlagValue);
-        Log.d("zzz", "DemoUserState() called with: desc = [" + desc + "], attrFlagValue = [" + attrFlagValue + "]");
     }
 
 

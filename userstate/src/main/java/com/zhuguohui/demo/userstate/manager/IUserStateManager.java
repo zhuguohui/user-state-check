@@ -35,7 +35,7 @@ public  interface  IUserStateManager {
      * 比如登录可能涉及到登录和注册两个页面。只有相关的页面都销毁了。
      * 才可以判断是否登录成功，回调相关的callback
      * @param activity
-     * @return 如果当前页面和登录相关返回 {@link IUserState#login}
+     * @return 如果当前页面和登录相关返回 用户状态数组
      *         以此类推，如果都不相关，返回null。
      */
     IUserState[] getActivityUserStateType(Activity activity);
