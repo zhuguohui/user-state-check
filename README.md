@@ -342,7 +342,7 @@ public  interface  IUserStateManager {
 
 1.要实现View拦截，需要注入ViewFactory2（可选）
 
-2.要实现回调。需要在**onPostCreate()**和 **onDestroy()**方法中回调框架的方法。
+2.要实现回调。需要在 **onPostCreate()** 和 **onDestroy()** 方法中回调框架的方法。
 
 ```java
 public class BaseActivity extends AppCompatActivity {
