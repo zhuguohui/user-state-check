@@ -36,10 +36,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        //注入factory2
-        LayoutInflaterCompat.setFactory2(LayoutInflater.from(this), UserStateManager.getLayoutInflaterFactory(this,compositeDisposable, e->{
-            GZToast.error().show(e.getMessage());
-        }));
+
 
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());

@@ -2,10 +2,13 @@ package com.zhuguohui.demo.ui;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.LayoutInflaterCompat;
 
+import com.zhuguohui.demo.toast.GZToast;
 import com.zhuguohui.demo.userstate.manager.UserStateManager;
 
 import io.reactivex.disposables.CompositeDisposable;
@@ -22,7 +25,10 @@ public class BaseActivity extends AppCompatActivity {
     protected CompositeDisposable compositeDisposable=new CompositeDisposable();
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-
+        //注入factory2
+        LayoutInflaterCompat.setFactory2(LayoutInflater.from(this), UserStateManager.getLayoutInflaterFactory(this,compositeDisposable, e->{
+            GZToast.error().show(e.getMessage());
+        }));
         super.onCreate(savedInstanceState);
         currentActivity=this;
     }
