@@ -79,6 +79,7 @@ public class MainActivity extends BaseActivity {
         BaiduApi finalBaiduApi = baiduApi;
         binding.btnGetBaiduHot.setOnClickListener(v->{
             Disposable disposable = finalBaiduApi.getHotList()
+                    //检测用户状态
                     .compose(new UserStateTransform<>(this, Login|BindRealName))
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
