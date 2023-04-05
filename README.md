@@ -5,7 +5,7 @@
 
 # 功能
 
-- 通过dexmaker 实现AOP，通过设置ViewFactory2，动态生成view的子类。配合xml中定义属性。可以无感的拦截任意view的点击事件
+- 通过dexmaker 实现动态代理，通过设置ViewFactory2，动态生成view的子类。配合xml中定义属性。可以无感的拦截任意view的点击事件
 - 通过dexMaker 实现AOP，可以生成任意类的子类。便于和viewDataBing联合使用。
 - 可以和RxJava联合使用。
 - 可以自定义多个用户状态(最多32个，用的int保存的，可以自行扩展成long类型)
@@ -40,7 +40,7 @@
 
 ### 在需要拦截的方法上使用注解
 
-设置需要检测的状态为，登录，绑定手机号，实名认证。
+设置需要检测的状态为: 登录，绑定手机号，实名认证。
 
 ```java
     @CheckUserState(states = Login|BindPhoneNumber|BindRealName,policy = 	UserStateCheckPolicy.autoGo)
@@ -126,7 +126,7 @@
 
 ### 使用
 
-正常设置点击事件即可，想过的拦截工作对业务代码无感。
+正常设置点击事件即可，通过框架实现拦截工作对业务代码无感。
 
 ```java
  private void aopView() {
@@ -188,9 +188,9 @@
 
 ## 用户不同意
 
-会抛出**UserStateCheckException**通过其**getState()**方法可以获取匹配不成功的用户状态
+会抛出**UserStateCheckException**通过其 **getState()** 方法可以获取匹配不成功的用户状态
 
-在AOP相关类的时候都可以传入一个错误的处理器,自定义错误的处理逻辑
+在动态代理相关类的时候都可以传入一个错误的处理器,自定义错误的处理逻辑
 
 ```java
  /**
@@ -219,7 +219,7 @@
 
 ## 1.添加依赖
 
-该库已经上传只jitpack
+该库已经上传到 **jitpack**
 
 ```groovy
 	allprojects {
@@ -242,7 +242,7 @@ dependencies {
 
 示例代码：
 
-重点是要在构造函数中出入，状态名称，和对应于xml中的属性名称。
+重点是要在构造函数中穿入，状态名称，和对应于xml中的属性名称。这样才能和xml属性联动。
 
 ```java
 public final class DemoUserState extends IUserState {
@@ -340,7 +340,7 @@ public  interface  IUserStateManager {
 
 ## 改造BaseActivity 
 
-1.要实现View拦截，需要注入ViewFactory2（可选）
+1.要实现View拦截，需要注入ViewFactory2
 
 2.要实现回调。需要在 **onPostCreate()** 和 **onDestroy()** 方法中回调框架的方法。
 
@@ -451,7 +451,8 @@ public class MyApp extends Application {
 
 最开始使用的是 下面这个cglib库
 
-[leo-ouyang/CGLib-for-Android]: https://github.com/leo-ouyang/CGLib-for-Android/
+[CGLib-for-Android](https://github.com/leo-ouyang/CGLib-for-Android)
+
 
 但是这个库有个问题,不支持对没有无参构造函数类的动态代理，我还提了Issues
 
@@ -461,7 +462,7 @@ public class MyApp extends Application {
 
 
 
-[aaa]: https://github.com/linkedin/dexmaker	"dexmaker"
+[dexmaker](https://github.com/linkedin/dexmaker)
 
 
 
@@ -494,10 +495,14 @@ public final class ProxyBuilder<T> {
 }
 ```
 为了便于使用生成了自己的库。
-[https://github.com/zhuguohui/Android-Cglib]: https://github.com/zhuguohui/Android-Cglib
+
+[zhuguohui/Android-Cglib]( https://github.com/zhuguohui/Android-Cglib)
 
 
-使用该库实现对setOnClickListener的动态代理。还有个好处，如果不单独重写这一个方法的话。光是LinearLayout中就要800多个public方法需要重写。每个方法都通过反射调用。性能比较差。
+
+使用该库实现对setOnClickListener的动态代理。
+
+还有个好处，如果不单独重写这一个方法的话。光是LinearLayout中就要800多个public方法需要重写。每个方法都通过反射调用。性能比较差。
 
 ```java
 return (View) ProxyBuilder.forClass(viewClass)
