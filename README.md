@@ -451,7 +451,7 @@ public class MyApp extends Application {
 
 最开始使用的是 下面这个cglib库
 
-[https://github.com/leo-ouyang/CGLib-for-Android/]:https://github.com/leo-ouyang/CGLib-for-Android/
+[leo-ouyang/CGLib-for-Android]: https://github.com/leo-ouyang/CGLib-for-Android/
 
 但是这个库有个问题,不支持对没有无参构造函数类的动态代理，我还提了Issues
 
@@ -461,7 +461,7 @@ public class MyApp extends Application {
 
 
 
-[dexmaker]: https://github.com/linkedin/dexmaker
+[aaa]: https://github.com/linkedin/dexmaker	"dexmaker"
 
 
 
