@@ -443,3 +443,216 @@ public class MyApp extends Application {
 
 # 原理
 
+## 动态代理
+
+
+
+基于开源库
+
+最开始使用的是 下面这个cglib库
+
+[https://github.com/leo-ouyang/CGLib-for-Android/]:https://github.com/leo-ouyang/CGLib-for-Android/
+
+但是这个库有个问题,不支持对没有无参构造函数类的动态代理，我还提了Issues
+
+<img src=".\demo-img\提问题.png" style="zoom:50%;" />
+
+后来我发现这个库用的是dexmaker于是，直接使用dexmaker
+
+
+
+[dexmaker]: https://github.com/linkedin/dexmaker
+
+
+
+dexmaker可以对只有有参构造函数的类实现动态代理。
+
+
+
+但是又遇到下一个问题。动态代理view。有些方法不能被代理
+
+如果一个方法被@UnsupportedAppUsage 注解注释。那么无法通过反射获取。
+
+<img src=".\demo-img\不支持的方法.png" style="zoom:50%;" />
+
+而我们要代理onClick方法也不需要重写所有方法
+
+所以我在原有的dexmaker的基础上，添加了可以自定义要重写那个方法的功能。
+```java
+
+public final class ProxyBuilder<T> {
+    public interface MethodOverrideFilter{
+        boolean isOverrideMethod(Method method);
+    }
+
+    MethodOverrideFilter methodOverrideFilter;
+
+    public ProxyBuilder<T> setMethodOverrideFilter(MethodOverrideFilter methodOverrideFilter) {
+        this.methodOverrideFilter = methodOverrideFilter;
+        return this;
+    }
+}
+```
+为了便于使用生成了自己的库。
+[https://github.com/zhuguohui/Android-Cglib]: https://github.com/zhuguohui/Android-Cglib
+
+
+使用该库实现对setOnClickListener的动态代理。还有个好处，如果不单独重写这一个方法的话。光是LinearLayout中就要800多个public方法需要重写。每个方法都通过反射调用。性能比较差。
+
+```java
+return (View) ProxyBuilder.forClass(viewClass)
+       .constructorArgTypes(Context.class, AttributeSet.class)
+       .constructorArgValues(context, attrs)
+       .dexCache(context.getDir("dx", Context.MODE_PRIVATE))
+        //只重写setOnClickListener
+        // 因为android中的View中的一些方式被 @UnsupportedAppUsage注解修饰
+        //客户端无法通过反射来获取，无法重写
+        .setMethodOverrideFilter(method -> method.getName().equals("setOnClickListener"))
+       .handler(new InvocationHandler() {
+           @Override
+           public Object invoke(Object proxy, Method method, Object[] objects) throws Throwable {
+               if(method.getName().equals("setOnClickListener")){
+                   if(objects.length>0&& objects[0] instanceof View.OnClickListener){
+                       View.OnClickListener onClickListener= (View.OnClickListener) objects[0];
+                       objects=new Object[]{new CheckUserStateOnClickListener(context,compositeDisposable,onClickListener,userStateFlags,policy,errorFunction)};
+
+                   }
+               }
+
+            return    ProxyBuilder.callSuper(proxy, method, objects);
+           }
+       }).build();
+```
+
+## 用户状态检测
+
+基于rxjava的ObservableTransformer实现，代码如下。
+
+```java
+package com.zhuguohui.demo.userstate.transform;
+
+import android.content.Context;
+import android.os.Looper;
+
+import com.zhuguohui.demo.userstate.IUserState;
+import com.zhuguohui.demo.userstate.UserStateCallBack;
+import com.zhuguohui.demo.userstate.UserStateCheckException;
+import com.zhuguohui.demo.userstate.manager.UserStateManager;
+import com.zhuguohui.demo.userstate.policy.UserStateCheckPolicy;
+
+import java.util.Arrays;
+import java.util.List;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
+
+
+/**
+ * <pre>
+ * Created by zhuguohui
+ * Date: 2023/2/28
+ * Time: 15:30
+ * Desc:
+ * </pre>
+ */
+public class UserStateTransform<T> implements ObservableTransformer<T, T> {
+    private  Context context;
+    private List<IUserState> userStateList;
+    private UserStateCheckPolicy policy;
+
+    public UserStateTransform(Context context,int userStateFlags) {
+        this(context,false, userStateFlags);
+    }
+
+    public UserStateTransform(Context context,boolean justCheck, int userStateFlags) {
+        this(context,justCheck ? UserStateCheckPolicy.justCheck : UserStateCheckPolicy.autoGo, userStateFlags);
+
+    }
+
+    public UserStateTransform(Context context,UserStateCheckPolicy policy,int userStateFlags) {
+
+        this.context=context;
+        IUserState[] states = UserStateManager.getInstance().getUserStateByFlags(userStateFlags);
+        userStateList=Arrays.asList(states);
+        this.policy = policy == null ? UserStateCheckPolicy.autoGo : policy;
+
+    }
+
+    private static Object object = new Object();
+    Scheduler scheduler;
+
+    @Override
+    public ObservableSource<T> apply(Observable<T> upstream) {
+        //先验证用户状态
+        return Observable.just(object)
+                .doOnNext(obj -> scheduler = getCallSchedulers())
+                .flatMap(obj->{
+                    Observable<Object> next=Observable.just(obj);
+                    for(IUserState userState:userStateList){
+                        next=next.flatMap(o->matchUserState(o,userStateList,userState));
+                    }
+                    return next;
+                })
+                .flatMap(obj -> upstream) //全部验证通过才订阅上游
+                ;
+
+    }
+
+    /**
+     * 获取上游的Scheduler,这样在回调的时候切换回原先的Scheduler
+     *
+     * @return
+     */
+    private Scheduler getCallSchedulers() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return AndroidSchedulers.mainThread();
+        } else {
+            return Schedulers.io();
+        }
+    }
+
+
+    private Observable<Object> matchUserState(Object t, List<IUserState> userStateList, IUserState userState) {
+        boolean needMatch = userStateList.contains(userState);
+        if (needMatch && !UserStateManager.getInstance().isMatchUserState(userState)) {
+            if (policy == UserStateCheckPolicy.autoGo) {
+                return Observable.create((ObservableOnSubscribe<Object>) emitter -> {
+                    UserStateManager.getInstance().doMatchUserState(context,userState, new UserStateCallBack() {
+                        @Override
+                        public void onMath() {
+                            scheduler.scheduleDirect(() -> {
+                                //登录成功
+                                emitter.onNext(t);
+                                emitter.onComplete();
+                            });
+
+                        }
+
+                        @Override
+                        public void onCancel() {
+                            scheduler.scheduleDirect(() -> {
+                                emitter.onError(new UserStateCheckException(userState));
+                            });
+
+                        }
+                    });
+                });
+            } else {
+                return Observable
+                        .error(new UserStateCheckException(userState))
+                        .observeOn(scheduler);
+            }
+        } else {
+            return Observable
+                    .just(t)
+                    .subscribeOn(scheduler);
+        }
+    }
+
+}
+```
